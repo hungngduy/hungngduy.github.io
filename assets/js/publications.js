@@ -14,7 +14,8 @@
  *   pdf / code                        -> [PDF] / [Code] links
  *   address, month                    -> used for conference papers
  *
- * Corresponding authors (list `corresponding` in _config.yml) get a superscript *.
+ * Corresponding authors: add  corresponding = {Last, First}  to an entry
+ *   (several: {Ha, Jeongseok and Nguyen, Chuyen T.}); they get the mark (default *).
  */
 (function (root) {
   'use strict';
@@ -175,12 +176,13 @@
     return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + text + '</a>';
   }
 
-  function formatEntry(e, me, corr) {
+  function formatEntry(e, me) {
     var f = e.fields;
     var out = [];
     var href = f.doi ? 'https://doi.org/' + f.doi : (f.url || '');
     var title = esc(f.title || 'Untitled');
     var titleHtml = href ? link(href, title) : title;
+    var corr = f.corresponding ? f.corresponding.split(/\s+and\s+/i).map(parseName) : [];
     out.push(formatAuthors(f.author, me, corr) + ', “' + titleHtml + ',”');
 
     var venue = f.journal || f.booktitle || '';
@@ -238,7 +240,7 @@
         html += '<section class="pub-group pub-' + g.key + '"><h2>' + g.title + '</h2>' +
           '<ul class="' + (g.prefix ? 'pub-list numbered' : 'pub-list bulleted') + '">' +
           items.map(function (e) {
-            return '<li>' + (e.label ? '<span class="pub-label">' + e.label + '</span> ' : '') + formatEntry(e, opts.me, opts.corresponding) + '</li>';
+            return '<li>' + (e.label ? '<span class="pub-label">' + e.label + '</span> ' : '') + formatEntry(e, opts.me) + '</li>';
           }).join('') + '</ul></section>';
       }
       if (g.prefix) labelled = labelled.concat(items);
@@ -247,7 +249,7 @@
     if (opts.max) {
       var recent = labelled.sort(newestFirst).slice(0, opts.max);
       html = '<ul class="pub-list numbered">' + recent.map(function (e) {
-        return '<li><span class="pub-label">' + e.label + '</span> ' + formatEntry(e, opts.me, opts.corresponding) + '</li>';
+        return '<li><span class="pub-label">' + e.label + '</span> ' + formatEntry(e, opts.me) + '</li>';
       }).join('') + '</ul>';
     }
     return html;
@@ -266,8 +268,7 @@
             corrMark = el.dataset.corrMark || '*';
             el.innerHTML = render(txt, {
               me: { first: el.dataset.meFirst || '', last: el.dataset.meLast || '', display: el.dataset.meDisplay || '' },
-              max: el.dataset.max ? parseInt(el.dataset.max, 10) : 0,
-              corresponding: (el.dataset.corresponding || '').split(';').filter(function (x) { return x.trim(); }).map(parseName)
+              max: el.dataset.max ? parseInt(el.dataset.max, 10) : 0
             });
           })
           .catch(function (err) {
